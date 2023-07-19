@@ -6,7 +6,7 @@ use rss::Channel;
 use crate::article::{Article, Category};
 
 // TODO: Possibility add closure to customize channel construction
-async fn fetch_feeds<T: IntoUrl>(feeds: Vec<T>) -> Vec<Channel> {
+pub async fn fetch_feeds<T: IntoUrl>(feeds: Vec<T>) -> Vec<Channel> {
     let client = Client::new();
 
     future::join_all(feeds.into_iter().map(|url| {
@@ -27,13 +27,14 @@ async fn fetch_feeds<T: IntoUrl>(feeds: Vec<T>) -> Vec<Channel> {
     .await
 }
 
-async fn fetch_channel(channel: Channel, category: Category) -> Vec<Article> {
+pub async fn fetch_channel(channel: &Channel, category: Category) -> Vec<Article> {
     let bodies = stream::iter(channel.items.clone())
         .map(|item| {
             let source = channel.title.clone();
             let language = channel.language.clone();
             let category = category.clone();
             tokio::spawn(async move {
+                println!("EXTRACTING: {}", item.clone().title.unwrap());
                 let resp = ArticleExtractor::get(item.link().unwrap())
                     .await
                     .expect("error: couldn't extract article")
@@ -57,18 +58,33 @@ async fn fetch_channel(channel: Channel, category: Category) -> Vec<Article> {
                     url: item.link.unwrap(),
                     source,
                     category,
-                    language: language.unwrap_or(
-                        resp.language
-                            .expect("error: couldn't get article language")
-                            .full_name()
-                            .to_string(),
-                    ),
+                    language: language
+                        .unwrap_or(resp.language.unwrap_or_default().full_name().to_string()),
                 }
             })
         })
+        // TODO: Make into a constant
         .buffer_unordered(10);
+
     return bodies
         .map(|b| b.expect("an error occurred"))
         .collect::<Vec<_>>()
         .await;
+}
+
+pub async fn fetch_channels(channels: Vec<Channel>, category: Category) -> Vec<Article> {
+    let bodies = stream::iter(channels)
+        .map(|channel| {
+            let category = category.clone();
+            tokio::spawn(async move { fetch_channel(&channel, category).await })
+        })
+        .buffer_unordered(10);
+
+    bodies
+        .map(|b| b.expect("an error occurred"))
+        .collect::<Vec<_>>()
+        .await
+        .into_iter()
+        .flatten()
+        .collect()
 }
