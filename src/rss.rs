@@ -1,9 +1,10 @@
-use extrablatt::Article as ArticleExtractor;
+use chrono::DateTime;
+use extrablatt::{date::Date, Article as ArticleExtractor};
 use futures::{future, stream, StreamExt};
 use reqwest::{Client, IntoUrl};
 use rss::Channel;
 
-use crate::article::{Article, Category};
+use crate::article::{Article, Category, Language};
 
 // TODO: Possibility add closure to customize channel construction
 pub async fn fetch_feeds<T: IntoUrl>(feeds: Vec<T>) -> Vec<Channel> {
@@ -27,12 +28,17 @@ pub async fn fetch_feeds<T: IntoUrl>(feeds: Vec<T>) -> Vec<Channel> {
     .await
 }
 
-pub async fn fetch_channel(channel: &Channel, category: Category) -> Vec<Article> {
+pub async fn fetch_channel(
+    channel: &Channel,
+    category: Category,
+    language: Language,
+) -> Vec<Article> {
     let bodies = stream::iter(channel.items.clone())
         .map(|item| {
             let source = channel.title.clone();
-            let language = channel.language.clone();
+            let language = language.clone();
             let category = category.clone();
+            let pub_date = item.pub_date.clone();
             tokio::spawn(async move {
                 println!("EXTRACTING: {}", item.clone().title.unwrap());
                 let resp = ArticleExtractor::get(item.link().unwrap())
@@ -55,11 +61,24 @@ pub async fn fetch_channel(channel: &Channel, category: Category) -> Vec<Article
                             .expect("error: couldn't get article preview")
                             .to_string(),
                     ),
+                    date: if let Some(pub_date) = pub_date {
+                        Some(
+                            DateTime::parse_from_rfc2822(pub_date.as_str())
+                                .unwrap()
+                                .date_naive(),
+                        )
+                    } else if let Some(pub_date) = resp.publishing_date {
+                        Some(match pub_date.published {
+                            Date::Date(date) => date,
+                            Date::DateTime(date_time) => date_time.date(),
+                        })
+                    } else {
+                        None
+                    },
                     url: item.link.unwrap(),
                     source,
                     category,
-                    language: language
-                        .unwrap_or(resp.language.unwrap_or_default().full_name().to_string()),
+                    language,
                 }
             })
         })
@@ -72,11 +91,16 @@ pub async fn fetch_channel(channel: &Channel, category: Category) -> Vec<Article
         .await;
 }
 
-pub async fn fetch_channels(channels: Vec<Channel>, category: Category) -> Vec<Article> {
+pub async fn fetch_channels(
+    channels: Vec<Channel>,
+    category: Category,
+    language: Language,
+) -> Vec<Article> {
     let bodies = stream::iter(channels)
         .map(|channel| {
             let category = category.clone();
-            tokio::spawn(async move { fetch_channel(&channel, category).await })
+            let language = language.clone();
+            tokio::spawn(async move { fetch_channel(&channel, category, language).await })
         })
         .buffer_unordered(10);
 

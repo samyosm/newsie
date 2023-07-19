@@ -4,7 +4,7 @@ mod article;
 mod db;
 mod rss;
 
-use crate::article::Category;
+use crate::article::{Category, Language};
 
 #[tokio::main]
 async fn main() {
@@ -18,7 +18,7 @@ async fn main() {
     println!("Fetching Feeds");
     let channels = fetch_feeds(feeds).await;
 
-    let articles = fetch_channels(channels, Category::General).await;
+    let articles = fetch_channels(channels, Category::General, Language::English).await;
 
     println!("{:?}", articles);
     println!("count: {}", articles.len())
