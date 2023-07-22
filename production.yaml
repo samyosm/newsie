@@ -7,16 +7,16 @@ services:
       - './data:/data/db'
 
   server:
-    build: .
+    images: samyos/newsie:latest
     volumes:
       - './batches:/batches'
     ports:
-      - "5000:5000"
+      - "80:5000"
     expose:
       - '5000'
     restart: always
     environment:
-      - FETCH_AUTHORIZATION=test
+      - FETCH_AUTHORIZATION=${FETCH_AUTHORIZATION}
       - BATCHES_DIR=/batches
     depends_on:
       - mongo
