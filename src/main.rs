@@ -33,7 +33,11 @@ struct Query {
 #[post("/api/v1/fetch")]
 async fn update_db(params: Option<web::Query<Query>>) -> impl Responder {
     match params {
-        Some(params) if params.authorization == env!("FETCH_AUTHORIZATION") => {
+        Some(params)
+            if params.authorization
+                == std::env::var("FETCH_AUTHORIZATION")
+                    .expect("error: no fetch authorization env") =>
+        {
             save_batches_from_dir().await;
             HttpResponse::Ok().body("SUCCESSFUL")
         }
@@ -58,6 +62,7 @@ async fn news(path: web::Path<NaiveDate>) -> impl Responder {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    println!("Starting!");
     let governor_conf = GovernorConfigBuilder::default()
         .per_second(3)
         .burst_size(10)
@@ -70,7 +75,7 @@ async fn main() -> std::io::Result<()> {
             .service(update_db)
             .service(news)
     })
-    .bind(("127.0.0.1", 5000))?
+    .bind(("0.0.0.0", 5000))?
     .run()
     .await
 }

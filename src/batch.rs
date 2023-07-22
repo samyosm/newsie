@@ -16,7 +16,8 @@ pub struct Batch {
 }
 
 pub fn get_batches() -> Vec<Batch> {
-    let dir: &'static str = option_env!("batches_dir").unwrap_or("batches");
+    let dir = std::env::var("BATCHES_DIR").unwrap_or("batches".to_string());
+
     let paths = fs::read_dir(dir).expect("error: invalid batch directory");
     paths
         .par_bridge()
