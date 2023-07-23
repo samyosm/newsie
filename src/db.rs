@@ -32,14 +32,17 @@ async fn get_collection() -> Collection<Article> {
 
     collection
 }
-pub async fn store(articles: Vec<Article>) -> Result<InsertManyResult, mongodb::error::Error> {
+
+pub async fn store(articles: Vec<Article>) -> anyhow::Result<()> {
     let collection = get_collection().await;
 
     let options = InsertManyOptions::builder().ordered(false).build();
-    collection.insert_many(articles, Some(options)).await
+    collection.insert_many(articles, Some(options)).await?;
+
+    Ok(())
 }
 
-// Support for a single category
+// TODO: Support for a single category
 pub async fn fetch(date: NaiveDate) -> Vec<Article> {
     let collection = get_collection().await;
     let date = date.to_string();

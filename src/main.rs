@@ -32,6 +32,7 @@ struct Query {
 
 #[post("/api/v1/fetch")]
 async fn update_db(params: Option<web::Query<Query>>) -> impl Responder {
+    println!("FETCHING");
     match params {
         Some(params)
             if params.authorization
