@@ -7,7 +7,7 @@ services:
       - './data:/data/db'
 
   server:
-    images: samyos/newsie:latest
+    image: 'ghcr.io/samyosm/newsie:release'
     volumes:
       - './batches:/batches'
     ports:
