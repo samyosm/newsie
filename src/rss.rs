@@ -1,8 +1,10 @@
+use anyhow::{anyhow, Result};
+use article_scraper::ArticleScraper;
 use chrono::DateTime;
-use extrablatt::{date::Date, Article as ArticleExtractor};
 use futures::{future, stream, StreamExt};
 use reqwest::Client;
-use rss::Channel;
+use rss::{Channel, Guid};
+use url::Url;
 
 use crate::article::{Article, Category, Language};
 
@@ -30,66 +32,55 @@ pub async fn fetch_feeds(feeds: Vec<String>) -> Vec<Channel> {
 }
 
 pub async fn fetch_channel(
-    channel: &Channel,
+    channel: Channel,
     category: Category,
     language: Language,
 ) -> Vec<Article> {
-    let bodies = stream::iter(channel.items.clone())
-        .map(|item| -> tokio::task::JoinHandle<Option<Article>> {
+    let bodies = stream::iter(channel.items)
+        .map(|item| -> tokio::task::JoinHandle<Result<Article>> {
+            let client = Client::new();
+
             let source = channel.title.clone();
             let language = language.clone();
             let category = category.clone();
-            let pub_date = item.pub_date.clone();
 
             tokio::spawn(async move {
-                println!("EXTRACTING: {}", item.title.clone().unwrap());
+                println!("EXTRACTING: {}", item.title.as_ref().unwrap());
 
-                if let Ok(content) = ArticleExtractor::content(item.link().unwrap()).await {
-                    Some(Article {
-                        guid: if let Some(guid) = item.guid {
-                            guid.value
-                        } else {
-                            return None;
-                        },
-                        title: if let Some(title) = item.title {
-                            title
-                        } else if let Some(title) = content.title {
-                            title.to_string()
-                        } else {
-                            return None;
-                        },
+                let scraper = ArticleScraper::new(None).await;
+                let url = Url::parse(item.link().unwrap())?;
+                let article = scraper.parse(&url, false, &client, None).await?;
 
-                        content: if let Some(content) = content.text {
-                            content.to_string()
-                        } else {
-                            return None;
-                        },
-                        desc: if let Some(preview) = item.description {
-                            preview
-                        } else if let Some(preview) = content.description {
-                            preview.to_string()
-                        } else {
-                            return None;
-                        },
-                        date: if let Some(pub_date) = pub_date {
-                            DateTime::parse_from_rfc2822(pub_date.as_str())
-                                .unwrap()
-                                .date_naive()
-                        } else if let Some(pub_date) = content.publishing_date {
-                            match pub_date.published {
-                                Date::Date(date) => date,
-                                Date::DateTime(date_time) => date_time.date(),
-                            }
-                        } else {
-                            return None;
-                        },
-                        url: item.link.unwrap(),
+                if let (
+                    Some(Guid { value: guid, .. }),
+                    Some(title),
+                    Some(desc),
+                    Some(content),
+                    Some(url),
+                    Some(date),
+                ) = (
+                    item.guid,
+                    item.title.or(article.title),
+                    item.description,
+                    article.html,
+                    item.link,
+                    item.pub_date,
+                ) {
+                    Ok(Article {
+                        guid,
+                        title,
+                        desc,
+                        content,
+                        url,
                         source,
                         category,
                         language,
+                        date: DateTime::parse_from_rfc2822(date.as_str())
+                            .unwrap()
+                            .date_naive(),
                     })
                 } else {
-                    None
+                    Err(anyhow!("Not enough information"))
                 }
             })
         })
@@ -98,7 +89,7 @@ pub async fn fetch_channel(
 
     bodies
         .map(|b| b.expect("an error occurred"))
-        .filter_map(|f| async { f })
+        .filter_map(|f| async { f.ok() })
         .collect::<Vec<_>>()
         .await
 }
@@ -112,7 +103,7 @@ pub async fn fetch_channels(
         .map(|channel| {
             let category = category.clone();
             let language = language.clone();
-            tokio::spawn(async move { fetch_channel(&channel, category, language).await })
+            tokio::spawn(async move { fetch_channel(channel, category, language).await })
         })
         .buffer_unordered(10);
 
