@@ -5,27 +5,27 @@ RUN USER=root cargo new --bin newsie
 WORKDIR /newsie
 
 # Copy our manifests
-COPY ./Cargo.lock ./Cargo.lock
-COPY ./Cargo.toml ./Cargo.toml
+COPY Cargo.lock Cargo.toml ./
 
 # Build only the dependencies to cache them
-RUN cargo build --release
-RUN rm src/*.rs
+RUN cargo build --release &&\
+  rm src/*.rs
 
 # Copy the source code
 COPY ./src ./src
 
 # Build for release.
-RUN rm ./target/release/deps/newsie*
-RUN cargo build --release
+RUN rm ./target/release/deps/newsie* &&\
+  cargo build --release
 
 # The final base image
 FROM debian:bullseye-slim
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates
-
-RUN update-ca-certificates
+RUN apt-get update &&\
+  apt-get install -y --no-install-recommends ca-certificates libxml2 &&\
+  apt-get clean &&\
+  rm -rf /var/lib/apt/lists/* &&\
+  update-ca-certificates
 
 # Copy from the previous build
 COPY --from=build /newsie/target/release/newsie /usr/src/newsie
@@ -35,4 +35,3 @@ EXPOSE 5000
 
 # Run the binary
 CMD ["/usr/src/newsie"]
-
