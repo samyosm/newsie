@@ -1,4 +1,4 @@
-name: Create and publish a Docker image and deploy
+name: Publish & Deploy
 
 on:
   workflow_dispatch:
@@ -38,6 +38,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
