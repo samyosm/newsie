@@ -61,6 +61,11 @@ async fn news(path: web::Path<NaiveDate>) -> impl Responder {
         .body(body)
 }
 
+#[get("/")]
+async fn home() -> impl Responder {
+    "UP"
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     println!("Starting!");
@@ -73,6 +78,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Governor::new(&governor_conf))
+            .service(home)
             .service(update_db)
             .service(news)
     })
