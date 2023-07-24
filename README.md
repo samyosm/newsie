@@ -1,14 +1,14 @@
 # Newsie
 
 ![Made with Rust](https://img.shields.io/badge/Made%20with%20Rust-f74c00?style=for-the-badge&logo=rust)
-![Maintenance](https://img.shields.io/maintenance/yes/2023?style=for-the-badge?)
-![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/m/samyosm/newsie?style=for-the-badge?)
-![LICENSE](https://img.shields.io/github/license/samyosm/newsie?style=for-the-badge?)
-![Website](https://img.shields.io/website?url=http%3A%2F%2Fnewsie.samyos.me%2F&style=for-the-badge&label=API?)
+![Maintenance](https://img.shields.io/maintenance/yes/2023?style=for-the-badge)
+![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/m/samyosm/newsie?style=for-the-badge)
+![LICENSE](https://img.shields.io/github/license/samyosm/newsie?style=for-the-badge)
+![Website](https://img.shields.io/website?url=http%3A%2F%2Fnewsie.samyos.me%2F&style=for-the-badge&label=API)
 
-Newsie is a news API that allows you to locate articles and their content in
+Newsie is a News API that allows you to locate articles and their content in
 text format based on RSS feeds. In the future, I'm also hoping of introducing AI
-tools to gauge relevency to current events and sentiment anaylsis.
+tools to gauge relevancy to current events and sentiment analysis.
 
 ## Public API
 
@@ -64,7 +64,7 @@ Example: `http://newsie.samyos.me/api/v1/news/2023-07-23`
 
 ### [/fetch?authorization={api_key}](http://newsie.samyos.me/api/v1/fetch?authorization=)
 
-This is an admin only command that restart the pipeline to fetch newer articles.
+This is an admin-only command that restarts the pipeline to fetch newer articles.
 It is called every 30mins by a cron job.
 
 ## Deploy your own API
@@ -75,7 +75,7 @@ It is called every 30mins by a cron job.
 3. Run `docker compose up -d`
 
 You can customize the RSS Feeds of your API by changing the files in your
-`batches` directory. You can add or remove file as you see fit. For an example
+`batches` directory. You can add or remove files as you see fit. For an example
 please refer to this repo's `batches` directory.
 
 ### Testing Purposes
