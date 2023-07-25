@@ -1,4 +1,3 @@
-use actix_web::{body::BoxBody, http::header::ContentType, HttpResponse, Responder};
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
@@ -15,18 +14,20 @@ pub struct Article {
     pub date: NaiveDate,
 }
 
-impl Responder for Article {
-    type Body = BoxBody;
-
-    fn respond_to(self, _req: &actix_web::HttpRequest) -> actix_web::HttpResponse<Self::Body> {
-        let body = serde_json::to_string(&self).unwrap();
-        HttpResponse::Ok()
-            .content_type(ContentType::json())
-            .body(body)
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Eq, PartialEq, PartialOrd, Ord, Hash, Debug, Default)]
+#[derive(
+    Serialize,
+    Deserialize,
+    Clone,
+    Eq,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Debug,
+    Default,
+    FromFormField,
+)]
+#[serde(rename_all = "snake_case")]
 pub enum Category {
     #[default]
     Tech,
@@ -35,7 +36,20 @@ pub enum Category {
     Culture,
     Sports,
 }
-#[derive(Serialize, Deserialize, Clone, Eq, PartialEq, PartialOrd, Ord, Hash, Debug, Default)]
+#[derive(
+    Serialize,
+    Deserialize,
+    Clone,
+    Eq,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Debug,
+    Default,
+    FromFormField,
+)]
+#[serde(rename_all = "snake_case")]
 pub enum Language {
     #[default]
     English,

@@ -2,16 +2,15 @@ use chrono::NaiveDate;
 use futures::StreamExt;
 use mongodb::{
     options::{ClientOptions, IndexOptions, InsertManyOptions},
-    results::InsertManyResult,
     Client, Collection, IndexModel,
 };
 
-use bson::doc;
+use bson::{doc, Document};
 
-use crate::article::Article;
+use crate::article::{Article, Category, Language};
 
 async fn get_collection() -> Collection<Article> {
-    let client_options = ClientOptions::parse("mongodb://mongo:27017")
+    let client_options = ClientOptions::parse("mongodb://localhost:27017")
         .await
         .expect("error: couldn't create mongodb options");
     let client = Client::with_options(client_options).expect("error: couldn't connect to mongodb");
@@ -42,13 +41,32 @@ pub async fn store(articles: Vec<Article>) -> anyhow::Result<()> {
     Ok(())
 }
 
-// TODO: Support for a single category
-pub async fn fetch(date: NaiveDate) -> Vec<Article> {
+pub async fn fetch(
+    date: NaiveDate,
+    category: Option<Category>,
+    language: Option<Language>,
+) -> Vec<Article> {
     let collection = get_collection().await;
-    let date = date.to_string();
+
+    let mut query = Document::new();
+    query.insert("date", date.to_string());
+
+    if let Some(category) = category {
+        query.insert(
+            "category",
+            bson::to_bson(&category).expect("error: couldn't serialize category"),
+        );
+    }
+
+    if let Some(language) = language {
+        query.insert(
+            "language",
+            bson::to_bson(&language).expect("error: couldn't serialize language"),
+        );
+    }
 
     collection
-        .find(doc! {"date": date}, None)
+        .find(query, None)
         .await
         .expect("an error occured while trying to find documents")
         .map(|b| b.expect("an error occured while trying to find documents"))
