@@ -3,21 +3,7 @@ services:
   mongo:
     image: mongo:latest
     restart: always
+    ports:
+      - '27017:27017'
     volumes:
       - './data:/data/db'
-
-  server:
-    build: .
-    image: samyos/newsie
-    volumes:
-      - './batches:/batches'
-    ports:
-      - "5000:5000"
-    expose:
-      - '5000'
-    restart: always
-    environment:
-      - FETCH_AUTHORIZATION=test
-      - BATCHES_DIR=/batches
-    depends_on:
-      - mongo

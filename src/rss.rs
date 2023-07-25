@@ -10,7 +10,7 @@ use crate::article::{Article, Category, Language};
 
 // TODO: Possibility add closure to customize channel construction
 // TODO: !! Hash RSS xml and return new ones only
-pub async fn fetch_feeds(feeds: Vec<String>) -> Vec<Channel> {
+pub async fn collect_channels(feeds: Vec<String>) -> Vec<Channel> {
     let client = Client::new();
 
     future::join_all(feeds.into_iter().map(|url| {
@@ -31,7 +31,7 @@ pub async fn fetch_feeds(feeds: Vec<String>) -> Vec<Channel> {
     .await
 }
 
-pub async fn fetch_channel(
+pub async fn scrap_channel(
     channel: Channel,
     category: Category,
     language: Language,
@@ -45,7 +45,7 @@ pub async fn fetch_channel(
             let category = category.clone();
 
             tokio::spawn(async move {
-                println!("EXTRACTING: {}", item.title.as_ref().unwrap());
+                info!("Scrapping: {}", item.title.as_ref().unwrap());
 
                 let scraper = ArticleScraper::new(None).await;
                 let url = Url::parse(item.link().unwrap())?;
@@ -94,7 +94,7 @@ pub async fn fetch_channel(
         .await
 }
 
-pub async fn fetch_channels(
+pub async fn scrap_channels(
     channels: Vec<Channel>,
     category: Category,
     language: Language,
@@ -103,7 +103,7 @@ pub async fn fetch_channels(
         .map(|channel| {
             let category = category.clone();
             let language = language.clone();
-            tokio::spawn(async move { fetch_channel(channel, category, language).await })
+            tokio::spawn(async move { scrap_channel(channel, category, language).await })
         })
         .buffer_unordered(10);
 

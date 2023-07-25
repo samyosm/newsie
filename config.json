@@ -1,0 +1,20 @@
+{
+  "config": [
+    {
+      "language": "english",
+      "category": "general",
+      "feeds": [
+        "https://apnews.com/hub/general-news.rss",
+        "http://rss.cnn.com/rss/cnn_topstories.rss",
+        "http://feeds.bbci.co.uk/news/world/rss.xml"
+      ]
+    },
+    {
+      "language": "french",
+      "category": "general",
+      "feeds": [
+        "https://www.france24.com/fr/rss"
+      ]
+    }
+  ]
+}
