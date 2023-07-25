@@ -10,7 +10,7 @@ use bson::{doc, Document};
 use crate::article::{Article, Category, Language};
 
 async fn get_collection() -> Collection<Article> {
-    let client_options = ClientOptions::parse("mongodb://localhost:27017")
+    let client_options = ClientOptions::parse("mongodb://mongo:27017")
         .await
         .expect("error: couldn't create mongodb options");
     let client = Client::with_options(client_options).expect("error: couldn't connect to mongodb");
