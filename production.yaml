@@ -11,9 +11,9 @@ services:
     volumes:
       - './config.json:/config.json'
     ports:
-      - "80:5000"
+      - "80:8000"
     expose:
-      - '5000'
+      - '8000'
     restart: always
     environment:
       - FETCH_AUTHORIZATION=${FETCH_AUTHORIZATION}

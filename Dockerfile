@@ -31,7 +31,7 @@ RUN apt-get update &&\
 COPY --from=build /newsie/target/release/newsie /usr/src/newsie
 # COPY --from=build /holodeck/target/release/holodeck/target/x86_64-unknown-linux-musl/release/holodeck .
 
-EXPOSE 5000
+EXPOSE 8000 
 
 # Run the binary
 CMD ["/usr/src/newsie"]
